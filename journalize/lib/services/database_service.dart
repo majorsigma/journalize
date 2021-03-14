@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:path_provider/path_provider.dart';
 
-class DatabaseRoutines {
+class DatabaseService {
   String journalFile = "journalized_data.json";
 
   Future<String> get _localAppDirectory async {
@@ -28,14 +28,20 @@ class DatabaseRoutines {
 
     try {
       if (!fileLocation.existsSync()) {
-        print("$fileLocation does not exist in the file system: ${fileLocation.absolute}");
-        await fileLocation.writeAsString("{journalList: []}");
+        print(
+            "$fileLocation does not exist in the file system: ${fileLocation.absolute}");
+        await fileLocation.writeAsString('{"journalList": []}');
       }
 
-     return fileLocation.readAsString();
+      return fileLocation.readAsString();
     } catch (e) {
       print("Error reading file from disk!!!");
     }
-      return "";
+    return "";
+  }
+
+  void resetFileToDefault() async {
+    final fileLocation = await localPathFile;
+    fileLocation.delete();
   }
 }

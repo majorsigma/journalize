@@ -1,5 +1,11 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:journalize/models/journal.dart';
+import 'package:journalize/models/journal_list.dart';
+import 'package:journalize/modelviews/journals_modelview.dart';
+import 'package:provider/provider.dart';
 
 class AddPage extends StatefulWidget {
   @override
@@ -7,11 +13,14 @@ class AddPage extends StatefulWidget {
 }
 
 class _AddPageState extends State<AddPage> {
-  DateTime todaysDate;
+  TextEditingController _titleEditingController;
+  TextEditingController _contentEditingController;
 
   @override
   void initState() {
-    todaysDate = DateTime.now();
+    super.initState();
+    _titleEditingController = TextEditingController();
+    _contentEditingController = TextEditingController();
   }
 
   @override
@@ -52,6 +61,7 @@ class _AddPageState extends State<AddPage> {
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
               ),
               TextField(
+                controller: _titleEditingController,
                 textCapitalization: TextCapitalization.words,
                 keyboardType: TextInputType.url,
                 maxLines: 1,
@@ -64,11 +74,12 @@ class _AddPageState extends State<AddPage> {
               ),
               // SizedBox(height: ),
               Text(
-                "Story",
+                "Content",
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
               ),
               Expanded(
                 child: TextField(
+                  controller: _contentEditingController,
                   textCapitalization: TextCapitalization.words,
                   keyboardType: TextInputType.multiline,
                   style: TextStyle(fontSize: 18),
@@ -102,19 +113,71 @@ class _AddPageState extends State<AddPage> {
                       ),
                     ),
                   ),
-                  RaisedButton(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    onPressed: () {
-                      print("Raised Button Pressed");
-                    },
-                    color: Theme.of(context).accentColor,
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Text(
-                        "Submit",
-                        style: TextStyle(color: Colors.white, fontSize: 16),
+                  Builder(
+                    builder: (context) => RaisedButton(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      onPressed: () {
+                        var title = _titleEditingController.text;
+                        var content = _contentEditingController.text;
+
+                        if (title.isEmpty || content.isEmpty) {
+                          Scaffold.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                  "Make sure you add text in both input fields"),
+                              action: SnackBarAction(
+                                label: "Okay",
+                                onPressed: () => Scaffold.of(context)
+                                    .removeCurrentSnackBar(),
+                              ),
+                            ),
+                          );
+                        } else {
+                          Journal journal = Journal(
+                              title: title,
+                              content: content,
+                              editDate: DateTime.now());
+
+                          // Remove all entries in the database file
+                          // Provider.of<JournalsModelView>(context, listen: false)
+                          //     .removeAllJournals();
+                          
+                          Provider.of<JournalsModelView>(context, listen: false)
+                              .addJournal(journal);
+                          // Clear the contents of the fields and show that the record as been persisted successfully.
+                          _titleEditingController.clear();
+                          _contentEditingController.clear();
+                          Scaffold.of(context).showSnackBar(SnackBar(
+                            action: SnackBarAction(
+                              label: "Okay",
+                              onPressed: () => Navigator.of(context).pop(),
+                            ),
+                            duration: Duration(seconds: 2),
+                            content: Text(
+                                "Your content has been saved successfully"),
+                          ));
+                          Navigator.of(context).pop();
+
+                          Future<JournalList> data =
+                              Provider.of<JournalsModelView>(context,
+                                      listen: false)
+                                  .readJournalListFromFile();
+                          data.then((value) {
+                            print(value.toJson());
+                          });
+                        }
+
+                        // Remove journals here
+                      },
+                      color: Theme.of(context).accentColor,
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Text(
+                          "Submit",
+                          style: TextStyle(color: Colors.white, fontSize: 16),
+                        ),
                       ),
                     ),
                   )

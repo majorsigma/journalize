@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:journalize/models/journal_list.dart';
+import 'package:journalize/modelviews/journals_modelview.dart';
 import 'package:journalize/pages/add_page.dart';
+import 'package:journalize/services/database_service.dart';
+import 'package:provider/provider.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
@@ -49,10 +53,13 @@ class _HomePageState extends State<HomePage> {
           children: [
             Expanded(
               child: SingleChildScrollView(
-                child: Padding(
-                  // padding: const EdgeInsets.symmetric(horizontal: 10.0),
-                  padding: const EdgeInsets.only(top: 5),
-                  child: getPage(_currentPage),
+                child: ChangeNotifierProvider<JournalsModelView>(
+                  create: (context) =>
+                      JournalsModelView(dbService: DatabaseService()),
+                  child: Consumer<JournalsModelView>(
+                    builder: (_, modelView, ___) =>
+                        getPage(_currentPage, modelView),
+                  ),
                 ),
               ),
             ),
@@ -75,9 +82,40 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget getPage(int index) {
+  Widget getPage(int index, JournalsModelView modelView) {
+    Future<JournalList> journals = modelView.readJournalListFromFile();
     List<Widget> pageList = [
-      Container(),
+      SingleChildScrollView(
+        child: FutureBuilder(
+          future: journals,
+          builder: (context, AsyncSnapshot<JournalList> snapshot) {
+            if (!snapshot.hasData) {
+              return Center(
+                child: CircularProgressIndicator(),
+              );
+            } else
+              return ListView.builder(
+                shrinkWrap: true,
+                itemCount: snapshot.data.journalList.length,
+                itemBuilder: (context, index) {
+                  return ListTile(
+                    title: Text(
+                      snapshot.data.journalList[index].title,
+                      style:
+                          TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                    ),
+                    subtitle: Text(snapshot.data.journalList[index].content),
+                    trailing: Text(
+                      TimeOfDay.fromDateTime(
+                              snapshot.data.journalList[index].editDate)
+                          .format(context),
+                    ),
+                  );
+                },
+              );
+          },
+        ),
+      ),
       buildCalendarSingleChildScrollView(),
     ];
     return pageList[index];

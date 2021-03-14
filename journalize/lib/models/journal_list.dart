@@ -15,4 +15,6 @@ class JournalList {
       _$JournalListFromJson(json);
 
   Map<String, dynamic> toJson() => _$JournalListToJson(this);
+
+  List<Journal> get getJournalList => journalList;
 }

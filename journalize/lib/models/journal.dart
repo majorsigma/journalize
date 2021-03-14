@@ -7,10 +7,9 @@ part 'journal.g.dart';
 class Journal {
   @required String title;
   @required String content;
-  @required String category;
-  @required String editDate;
+  @required DateTime editDate;
 
-  Journal({this.title, this.content, this.category, this.editDate});
+  Journal({this.title, this.content, this.editDate});
 
   factory Journal.fromJson(Map<String, dynamic> json) =>
       _$JournalFromJson(json);
