@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:journalize/models/journal_list.dart';
+import 'package:intl/intl.dart';
+import 'package:journalize/models/journal.dart';
 import 'package:journalize/modelviews/journals_modelview.dart';
 import 'package:journalize/pages/add_page.dart';
-import 'package:journalize/services/database_service.dart';
+import 'package:journalize/pages/edit_page.dart';
+import 'package:journalize/services/service_locator.dart';
 import 'package:provider/provider.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -47,20 +49,15 @@ class _HomePageState extends State<HomePage> {
         ),
         centerTitle: true,
         elevation: 0.0,
+        actions: [createPopupMenu(context)],
       ),
       body: SafeArea(
         child: Column(
           children: [
             Expanded(
-              child: SingleChildScrollView(
-                child: ChangeNotifierProvider<JournalsModelView>(
-                  create: (context) =>
-                      JournalsModelView(dbService: DatabaseService()),
-                  child: Consumer<JournalsModelView>(
-                    builder: (_, modelView, ___) =>
-                        getPage(_currentPage, modelView),
-                  ),
-                ),
+              child: Consumer<JournalsModelView>(
+                builder: (_, modelView, ___) =>
+                    getPage(_currentPage, modelView),
               ),
             ),
           ],
@@ -82,43 +79,211 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget getPage(int index, JournalsModelView modelView) {
-    Future<JournalList> journals = modelView.readJournalListFromFile();
-    List<Widget> pageList = [
-      SingleChildScrollView(
-        child: FutureBuilder(
-          future: journals,
-          builder: (context, AsyncSnapshot<JournalList> snapshot) {
-            if (!snapshot.hasData) {
-              return Center(
-                child: CircularProgressIndicator(),
-              );
-            } else
-              return ListView.builder(
-                shrinkWrap: true,
-                itemCount: snapshot.data.journalList.length,
-                itemBuilder: (context, index) {
-                  return ListTile(
-                    title: Text(
-                      snapshot.data.journalList[index].title,
-                      style:
-                          TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                    ),
-                    subtitle: Text(snapshot.data.journalList[index].content),
-                    trailing: Text(
-                      TimeOfDay.fromDateTime(
-                              snapshot.data.journalList[index].editDate)
-                          .format(context),
-                    ),
-                  );
-                },
-              );
-          },
-        ),
+  PopupMenuButton createPopupMenu(BuildContext context) {
+    return PopupMenuButton<dynamic>(
+      padding: EdgeInsets.zero,
+      onSelected: (valueSelected) {
+        if (valueSelected == MenuAction.font_family_change) {
+          print("Font change yet to be implemented");
+        } else if (valueSelected == MenuAction.font_size_change) {
+          print("Font size change yet to be implemented");
+        } else if (valueSelected == MenuAction.clear_all_entries) {
+          getJournalModelView().removeAllJournals();
+        }
+      },
+      itemBuilder: (context) {
+        return getMenuItemList();
+      },
+    );
+  }
+
+  List<PopupMenuEntry> getMenuItemList() {
+    return [
+      PopupMenuItem<MenuAction>(
+        child: Text("Change Font Family"),
+        value: MenuAction.font_family_change,
       ),
+      PopupMenuItem<MenuAction>(
+        child: Text("Change Font Size"),
+        value: MenuAction.font_size_change,
+      ),
+      PopupMenuItem<MenuAction>(
+        child: Text("Clear All Entries"),
+        value: MenuAction.clear_all_entries,
+      ),
+      PopupMenuItem<CurrentThemeMode>(
+        child: getJournalModelView().toggleThemeMode() == CurrentThemeMode.dark
+            ? Text("Toggle Dark Mode")
+            : Text("Toggle Light Mode"),
+        value: getJournalModelView().currentThemeMode, // value: ,
+      ),
+    ];
+  }
+
+  JournalsModelView getJournalModelView() {
+    return getIt.get<JournalsModelView>();
+  }
+
+  Widget getPage(int index, JournalsModelView modelView) {
+    // Future<JournalList> journals = modelView.readJournalListFromFile();
+    Future<List<Journal>> journals = modelView.getSortedJournalEntries();
+    List<Widget> pageList = [
+      // SingleChildScrollView(
+      FutureBuilder(
+        future: journals,
+        builder: (context, AsyncSnapshot<List<Journal>> snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Center(child: CircularProgressIndicator());
+          } else if (!snapshot.hasData) {
+            return Center(
+              child: Text("There seem to be no data available"),
+            );
+          } else
+            return ListView.separated(
+              // reverse: true,
+              shrinkWrap: true,
+              itemCount: snapshot.data.length,
+              separatorBuilder: (context, index) => Divider(
+                // thickness: 2,
+                color: Theme.of(context).accentColor.withOpacity(.6),
+              ),
+              itemBuilder: (context, index) {
+                return createDismissbleJournalItem(snapshot, index, context);
+              },
+            );
+        },
+      ),
+      // ),
       buildCalendarSingleChildScrollView(),
     ];
     return pageList[index];
+  }
+
+  Dismissible createDismissbleJournalItem(
+      AsyncSnapshot<List<Journal>> snapshot, int index, BuildContext context) {
+    return Dismissible(
+      key: UniqueKey(),
+      child: GestureDetector(
+          child: ListTile(
+            leading: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Text(
+                  DateFormat.MMM()
+                      .format(snapshot.data[index].editDate),
+                  style: TextStyle(
+                      fontWeight: FontWeight.w900,
+                      fontSize: 20,
+                      color: Theme.of(context).accentColor),
+                ),
+                Text(DateFormat.d()
+                    .format(snapshot.data[index].editDate)),
+              ],
+            ),
+            title: Text(
+              snapshot.data[index].title,
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            subtitle: Text(
+              snapshot.data[index].content,
+              maxLines: 3,
+            ),
+            trailing: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  TimeOfDay.fromDateTime(
+                          snapshot.data[index].editDate)
+                      .format(context),
+                ),
+              ],
+            ),
+          ),
+          onTap: () {
+            Navigator.of(context).push(MaterialPageRoute(builder: (context) {
+              return EditPage(
+                journal: snapshot.data[index],
+                index: index,
+              );
+            }));
+          }),
+      background: Container(
+        color: Colors.red,
+        child: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Icon(FontAwesomeIcons.trash, color: Colors.white),
+              SizedBox(width: 10),
+              Text(
+                "Delete",
+                style: TextStyle(fontSize: 20, color: Colors.white),
+              )
+            ],
+          ),
+        ),
+      ),
+      secondaryBackground: Container(
+        color: Colors.red,
+        child: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              Text(
+                "Delete",
+                style: TextStyle(fontSize: 20, color: Colors.white),
+              ),
+              SizedBox(width: 10),
+              Icon(FontAwesomeIcons.trash, color: Colors.white),
+            ],
+          ),
+        ),
+      ),
+      onDismissed: (direction) {
+        var result = showDialog<bool>(
+            context: context,
+            builder: (context) {
+              return AlertDialog(
+                title: Text("Delete"),
+                content: Text("Are you sure you want to delete this entry?"),
+                actions: [
+                  OutlineButton(
+                    child: Text(
+                      "No",
+                      style: TextStyle(color: Theme.of(context).accentColor),
+                    ),
+                    onPressed: () {
+                      Navigator.of(context).pop(false);
+                    },
+                  ),
+                  RaisedButton(
+                    child: Text(
+                      "Yes",
+                      style: TextStyle(color: Colors.white),
+                    ),
+                    color: Theme.of(context).accentColor,
+                    onPressed: () {
+                      Navigator.of(context).pop(true);
+                    },
+                  ),
+                ],
+              );
+            });
+        result.then((value) {
+          if (value == true) {
+            getJournalModelView()
+                .removeJournal(snapshot.data[index]);
+          } else {
+            getJournalModelView().notifyListeners();
+          }
+        });
+      },
+    );
   }
 
   SingleChildScrollView buildCalendarSingleChildScrollView() {

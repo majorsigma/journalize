@@ -7,14 +7,23 @@ import 'package:journalize/services/database_service.dart';
 
 class JournalsModelView extends ChangeNotifier {
   DatabaseService dbService;
+  CurrentThemeMode currentThemeMode = CurrentThemeMode.light;
 
   JournalsModelView({this.dbService});
 
   Future<JournalList> readJournalListFromFile() async {
     String journalListJSON = await dbService.readFromFile();
-    JournalList journalList =
+    JournalList database =
         JournalList.fromJson(json: jsonDecode(journalListJSON));
-    return journalList;
+
+    return database;
+  }
+
+  Future<List<Journal>> getSortedJournalEntries() async {
+    JournalList database = await readJournalListFromFile();
+    database.journalList.sort(
+        (journalA, journalB) => journalB.editDate.compareTo(journalA.editDate));
+    return database.journalList;
   }
 
   void addJournal(Journal journal) async {
@@ -26,13 +35,48 @@ class JournalsModelView extends ChangeNotifier {
 
   void removeJournal(Journal journal) async {
     JournalList journalList = await readJournalListFromFile();
-    journalList.journalList.remove(journal);
+    journalList.journalList.remove(journal); 
+    dbService.resetFileToDefault();
     dbService.writeToFile(jsonEncode(journalList.toJson()));
+    notifyListeners();
+  }
+
+  void updateJournal(
+      {@required Journal journal,
+      @required int index,
+      String title,
+      String content,
+      DateTime editDate}) async {
+    JournalList database = await readJournalListFromFile();
+    database.journalList.removeAt(index);
+    Journal newJournal =
+        Journal(title: title, content: content, editDate: editDate);
+    database.journalList.add(newJournal);
+    dbService.writeToFile(jsonEncode(database.toJson()));
+    getSortedJournalEntries();
     notifyListeners();
   }
 
   void removeAllJournals() async {
     dbService.resetFileToDefault();
+    getSortedJournalEntries();
     notifyListeners();
   }
+
+  CurrentThemeMode toggleThemeMode() {
+    if (currentThemeMode == CurrentThemeMode.light) {
+      currentThemeMode = CurrentThemeMode.dark;
+      notifyListeners();
+      return currentThemeMode;
+    } else if (currentThemeMode == CurrentThemeMode.dark) {
+      currentThemeMode = CurrentThemeMode.light;
+      notifyListeners();
+      return currentThemeMode;
+    }
+    return currentThemeMode;
+  }
 }
+
+enum CurrentThemeMode { light, dark }
+
+enum MenuAction { font_family_change, font_size_change, clear_all_entries }

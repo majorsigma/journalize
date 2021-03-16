@@ -31,6 +31,7 @@ dependencies:
   json_annotation:
   table_calendar: ^2.3.3
   font_awesome_flutter: ^8.12.0
+  intl:
 
 
   # The following adds the Cupertino Icons font to your application.

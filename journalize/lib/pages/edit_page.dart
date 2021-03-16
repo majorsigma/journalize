@@ -3,12 +3,17 @@ import 'package:journalize/models/journal.dart';
 import 'package:journalize/modelviews/journals_modelview.dart';
 import 'package:journalize/services/service_locator.dart';
 
-class AddPage extends StatefulWidget {
+class EditPage extends StatefulWidget {
+  Journal journal;
+  int index;
+
+  EditPage({this.journal, this.index});
+
   @override
-  _AddPageState createState() => _AddPageState();
+  _EditPageState createState() => _EditPageState();
 }
 
-class _AddPageState extends State<AddPage> {
+class _EditPageState extends State<EditPage> {
   TextEditingController _titleEditingController;
   TextEditingController _contentEditingController;
 
@@ -16,7 +21,10 @@ class _AddPageState extends State<AddPage> {
   void initState() {
     super.initState();
     _titleEditingController = TextEditingController();
+    _titleEditingController.text = widget.journal.title;
+
     _contentEditingController = TextEditingController();
+    _contentEditingController.text = widget.journal.content;
   }
 
   @override
@@ -24,7 +32,7 @@ class _AddPageState extends State<AddPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          "Write",
+          "Edit Entry",
           style: TextStyle(
             color: Theme.of(context).textTheme.headline6.color.withOpacity(.30),
           ),
@@ -131,38 +139,23 @@ class _AddPageState extends State<AddPage> {
                             ),
                           );
                         } else {
-                          Journal journal = Journal(
-                              title: title,
-                              content: content,
-                              editDate: DateTime.now());
-
-                          getIt.get<JournalsModelView>().addJournal(journal);
-
-                          clearTextFields();
-                          Scaffold.of(context).showSnackBar(SnackBar(
-                            action: SnackBarAction(
-                              label: "Okay",
-                              onPressed: () => Navigator.of(context).pop(),
-                            ),
-                            duration: Duration(seconds: 2),
-                            content: Text(
-                                "Your content has been saved successfully"),
-                          ));
+                          getIt.get<JournalsModelView>().updateJournal(
+                                journal: widget.journal,
+                                index: widget.index,
+                                title: title,
+                                content: content,
+                                editDate: DateTime.now(),
+                              );
+                          _clearTextFields();
                           Navigator.of(context).pop();
-
-                          // var data = getIt
-                          //     .get<JournalsModelView>()
-                          //     .readJournalListFromFile();
-                          // data.then((value) => print(value.toJson()));
+                          // print("New Title: $title\nContent: $content");
                         }
-
-                        // Remove journals here
                       },
                       color: Theme.of(context).accentColor,
                       child: Padding(
                         padding: const EdgeInsets.all(8.0),
                         child: Text(
-                          "Submit",
+                          "Save",
                           style: TextStyle(color: Colors.white, fontSize: 16),
                         ),
                       ),
@@ -177,7 +170,7 @@ class _AddPageState extends State<AddPage> {
     );
   }
 
-  void clearTextFields() {
+  void _clearTextFields() {
     _titleEditingController.clear();
     _contentEditingController.clear();
   }

@@ -17,5 +17,5 @@ JournalList _$JournalListFromJson(Map<String, dynamic> json) {
 
 Map<String, dynamic> _$JournalListToJson(JournalList instance) =>
     <String, dynamic>{
-      "journalList": instance.journalList?.map((e) => e?.toJson())?.toList(),
+      'journalList': instance.journalList?.map((e) => e?.toJson())?.toList(),
     };
