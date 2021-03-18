@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:journalize/modelviews/journals_modelview.dart';
 import 'package:journalize/pages/home_page.dart';
 import 'package:journalize/services/service_locator.dart';
+import 'package:journalize/utils/themes.dart';
 import 'package:provider/provider.dart';
 
 void main() {
@@ -22,20 +23,30 @@ class _MyAppState extends State<MyApp> {
     return ChangeNotifierProvider.value(
       // create: (_) => JournalsModelView(dbService: _databaseService),
       value: _journalsModelView,
-      child: MaterialApp(
-        debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          primaryColor: Colors.white,
-          accentColor: Color(0xFFF6C791),
-          canvasColor: Colors.white,
-          textSelectionColor: Color(0xFFF6C791),
-          cursorColor: Color(0xFFF6C791),
-          indicatorColor: Color(0xFFF6C791),
-          textSelectionHandleColor: Color(0xFFF6C791),
+      child: Consumer<JournalsModelView>(
+        builder: (_, modelView, __) => MaterialApp(
+          themeMode: getSelectedTheme(),
+          debugShowCheckedModeBanner: false,
+          theme: getIt.get<JournalTheme>().lightTheme,
+          darkTheme: getIt.get<JournalTheme>().darkTheme,
+          title: "Journalize",
+          home: HomePage(),
         ),
-        title: "Journalize",
-        home: HomePage(),
       ),
     );
+  }
+
+  ThemeMode getSelectedTheme() {
+    var currentThemeMode = _getJournalsModelView().currentThemeMode;
+
+    if (currentThemeMode == CurrentThemeMode.dark) {
+      return ThemeMode.dark;
+    } else {
+      return ThemeMode.light;
+    }
+  }
+
+  JournalsModelView _getJournalsModelView() {
+    return getIt.get<JournalsModelView>();
   }
 }

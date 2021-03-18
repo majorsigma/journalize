@@ -4,8 +4,8 @@ import 'package:journalize/modelviews/journals_modelview.dart';
 import 'package:journalize/services/service_locator.dart';
 
 class EditPage extends StatefulWidget {
-  Journal journal;
-  int index;
+  final Journal journal;
+  final int index;
 
   EditPage({this.journal, this.index});
 
@@ -106,7 +106,6 @@ class _EditPageState extends State<EditPage> {
                       Navigator.of(context).pop();
                     },
                     color: Theme.of(context).accentColor,
-                    // highlightColor: Theme.of(context).accentColor,
                     highlightedBorderColor: Theme.of(context).accentColor,
                     textColor: Theme.of(context).accentColor,
                     child: Padding(

@@ -88,7 +88,16 @@ class _HomePageState extends State<HomePage> {
         } else if (valueSelected == MenuAction.font_size_change) {
           print("Font size change yet to be implemented");
         } else if (valueSelected == MenuAction.clear_all_entries) {
-          getJournalModelView().removeAllJournals();
+          // show a dialogue that ask user if he/she wants to delete all entries or not
+          var result = showAlertDialog(context, "Delete",
+              "Are you sure you want to DELETE all entries?");
+          result.then((value) {
+            if (value == true)
+              getJournalModelView().removeAllJournals(); 
+          });
+        } else if (valueSelected == CurrentThemeMode.dark ||
+            valueSelected == CurrentThemeMode.light) {
+          getJournalModelView().toggleThemeMode();
         }
       },
       itemBuilder: (context) {
@@ -112,9 +121,9 @@ class _HomePageState extends State<HomePage> {
         value: MenuAction.clear_all_entries,
       ),
       PopupMenuItem<CurrentThemeMode>(
-        child: getJournalModelView().toggleThemeMode() == CurrentThemeMode.dark
-            ? Text("Toggle Dark Mode")
-            : Text("Toggle Light Mode"),
+        child: getJournalModelView().currentThemeMode == CurrentThemeMode.dark
+            ? Text("Toggle Light Mode")
+            : Text("Toggle Dark Mode"),
         value: getJournalModelView().currentThemeMode, // value: ,
       ),
     ];
@@ -134,9 +143,9 @@ class _HomePageState extends State<HomePage> {
         builder: (context, AsyncSnapshot<List<Journal>> snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return Center(child: CircularProgressIndicator());
-          } else if (!snapshot.hasData) {
+          } else if (!snapshot.hasData || snapshot.data.isEmpty) {
             return Center(
-              child: Text("There seem to be no data available"),
+              child: Text("No journal entry yet."),
             );
           } else
             return ListView.separated(
@@ -169,15 +178,13 @@ class _HomePageState extends State<HomePage> {
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Text(
-                  DateFormat.MMM()
-                      .format(snapshot.data[index].editDate),
+                  DateFormat.MMM().format(snapshot.data[index].editDate),
                   style: TextStyle(
                       fontWeight: FontWeight.w900,
                       fontSize: 20,
                       color: Theme.of(context).accentColor),
                 ),
-                Text(DateFormat.d()
-                    .format(snapshot.data[index].editDate)),
+                Text(DateFormat.d().format(snapshot.data[index].editDate)),
               ],
             ),
             title: Text(
@@ -194,8 +201,7 @@ class _HomePageState extends State<HomePage> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  TimeOfDay.fromDateTime(
-                          snapshot.data[index].editDate)
+                  TimeOfDay.fromDateTime(snapshot.data[index].editDate)
                       .format(context),
                 ),
               ],
@@ -245,45 +251,53 @@ class _HomePageState extends State<HomePage> {
         ),
       ),
       onDismissed: (direction) {
-        var result = showDialog<bool>(
-            context: context,
-            builder: (context) {
-              return AlertDialog(
-                title: Text("Delete"),
-                content: Text("Are you sure you want to delete this entry?"),
-                actions: [
-                  OutlineButton(
-                    child: Text(
-                      "No",
-                      style: TextStyle(color: Theme.of(context).accentColor),
-                    ),
-                    onPressed: () {
-                      Navigator.of(context).pop(false);
-                    },
-                  ),
-                  RaisedButton(
-                    child: Text(
-                      "Yes",
-                      style: TextStyle(color: Colors.white),
-                    ),
-                    color: Theme.of(context).accentColor,
-                    onPressed: () {
-                      Navigator.of(context).pop(true);
-                    },
-                  ),
-                ],
-              );
-            });
+        var result = showAlertDialog(
+            context, "Delete", "Are you sure you want to delete this entry?");
         result.then((value) {
           if (value == true) {
-            getJournalModelView()
-                .removeJournal(snapshot.data[index]);
+            getJournalModelView().removeJournal(snapshot.data[index]);
           } else {
             getJournalModelView().notifyListeners();
           }
         });
       },
     );
+  }
+
+  Future<bool> showAlertDialog(
+      BuildContext context, String title, String message) {
+    return showDialog<bool>(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            title: Text(title),
+            content: Text(message),
+            actions: [
+              OutlineButton(
+                child: Text(
+                  "No",
+                  style: TextStyle(color: Theme.of(context).accentColor),
+                ),
+                onPressed: () {
+                  Navigator.of(context).pop(false);
+                },
+                color: Theme.of(context).accentColor,
+                highlightedBorderColor: Theme.of(context).accentColor,
+                textColor: Theme.of(context).accentColor,
+              ),
+              RaisedButton(
+                child: Text(
+                  "Yes",
+                  style: TextStyle(color: Colors.white),
+                ),
+                color: Theme.of(context).accentColor,
+                onPressed: () {
+                  Navigator.of(context).pop(true);
+                },
+              ),
+            ],
+          );
+        });
   }
 
   SingleChildScrollView buildCalendarSingleChildScrollView() {
@@ -475,9 +489,6 @@ class _HomePageState extends State<HomePage> {
 
   BottomNavigationBar createButtomNavigationBar() {
     return BottomNavigationBar(
-      backgroundColor: Theme.of(context).primaryColor,
-      selectedItemColor: Theme.of(context).accentColor,
-      // unselectedItemColor: Colors.red,
       currentIndex: _currentPage,
       onTap: (int index) {
         setState(() {
@@ -490,13 +501,13 @@ class _HomePageState extends State<HomePage> {
               FontAwesomeIcons.home,
               size: 25,
             ),
-            label: ""),
+            label: "Home"),
         BottomNavigationBarItem(
             icon: Icon(
               FontAwesomeIcons.calendar,
               size: 25,
             ),
-            label: ""),
+            label: "Calendar"),
       ],
     );
   }

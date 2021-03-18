@@ -63,17 +63,14 @@ class JournalsModelView extends ChangeNotifier {
     notifyListeners();
   }
 
-  CurrentThemeMode toggleThemeMode() {
+  void toggleThemeMode() {
     if (currentThemeMode == CurrentThemeMode.light) {
       currentThemeMode = CurrentThemeMode.dark;
       notifyListeners();
-      return currentThemeMode;
     } else if (currentThemeMode == CurrentThemeMode.dark) {
       currentThemeMode = CurrentThemeMode.light;
       notifyListeners();
-      return currentThemeMode;
     }
-    return currentThemeMode;
   }
 }
 
