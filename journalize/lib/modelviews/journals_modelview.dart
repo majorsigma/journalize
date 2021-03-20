@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:journalize/models/journal.dart';
 import 'package:journalize/models/journal_list.dart';
 import 'package:journalize/services/database_service.dart';
+import 'package:journalize/services/service_locator.dart';
 
 class JournalsModelView extends ChangeNotifier {
   DatabaseService dbService;
@@ -63,6 +64,8 @@ class JournalsModelView extends ChangeNotifier {
     notifyListeners();
   }
 
+   
+
   void toggleThemeMode() {
     if (currentThemeMode == CurrentThemeMode.light) {
       currentThemeMode = CurrentThemeMode.dark;
@@ -73,6 +76,25 @@ class JournalsModelView extends ChangeNotifier {
     }
   }
 }
+
+JournalsModelView getJournalModelView() {
+    return getIt.get<JournalsModelView>();
+  }
+
+  Future<List<Journal>> getRecentJournalEntry() async {
+    List<Journal> sortedJournalEntries =
+        await getJournalModelView().getSortedJournalEntries();
+    var recent = sortedJournalEntries.where((journal) {
+      DateTime todaysDate = DateTime.now();
+      DateTime removed2days = todaysDate.subtract(Duration(hours: 72));
+
+      if (journal.editDate.compareTo(removed2days) < 0)
+        return false;
+      else
+        return true;
+    });
+    return recent.toList();
+  }
 
 enum CurrentThemeMode { light, dark }
 

@@ -25,7 +25,7 @@ class JournalTheme {
   );
 
   ThemeData darkTheme = ThemeData(
-    fontFamily: "Dosis",
+    fontFamily: "Exo",
     primaryColor: Color(0xFF272822),
     accentColor: Color(0xFFFFCF38),
     canvasColor: Color(0xFF272822),

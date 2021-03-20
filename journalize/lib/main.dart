@@ -20,9 +20,12 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider.value(
-      // create: (_) => JournalsModelView(dbService: _databaseService),
-      value: _journalsModelView,
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider<JournalsModelView>.value(
+          value: _journalsModelView,
+        ),
+      ],
       child: Consumer<JournalsModelView>(
         builder: (_, modelView, __) => MaterialApp(
           themeMode: getSelectedTheme(),

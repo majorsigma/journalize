@@ -4,7 +4,6 @@ import 'package:journalize/models/journal.dart';
 import 'package:journalize/modelviews/journals_modelview.dart';
 import 'package:journalize/pages/add_page.dart';
 import 'package:journalize/pages/edit_page.dart';
-import 'package:journalize/services/service_locator.dart';
 import 'package:provider/provider.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -17,7 +16,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   CalendarController _calendarController;
   DateTime _currentDate;
-  int _currentPage = 1;
+  int _currentPage = 0;
   List<String> _pageTitles = ["Home", "Calendar"];
 
   @override
@@ -83,17 +82,12 @@ class _HomePageState extends State<HomePage> {
     return PopupMenuButton<dynamic>(
       padding: EdgeInsets.zero,
       onSelected: (valueSelected) {
-        if (valueSelected == MenuAction.font_family_change) {
-          print("Font change yet to be implemented");
-        } else if (valueSelected == MenuAction.font_size_change) {
-          print("Font size change yet to be implemented");
-        } else if (valueSelected == MenuAction.clear_all_entries) {
+        if (valueSelected == MenuAction.clear_all_entries) {
           // show a dialogue that ask user if he/she wants to delete all entries or not
           var result = showAlertDialog(context, "Delete",
               "Are you sure you want to DELETE all entries?");
           result.then((value) {
-            if (value == true)
-              getJournalModelView().removeAllJournals(); 
+            if (value == true) getJournalModelView().removeAllJournals();
           });
         } else if (valueSelected == CurrentThemeMode.dark ||
             valueSelected == CurrentThemeMode.light) {
@@ -108,29 +102,17 @@ class _HomePageState extends State<HomePage> {
 
   List<PopupMenuEntry> getMenuItemList() {
     return [
-      PopupMenuItem<MenuAction>(
-        child: Text("Change Font Family"),
-        value: MenuAction.font_family_change,
-      ),
-      PopupMenuItem<MenuAction>(
-        child: Text("Change Font Size"),
-        value: MenuAction.font_size_change,
-      ),
-      PopupMenuItem<MenuAction>(
-        child: Text("Clear All Entries"),
-        value: MenuAction.clear_all_entries,
-      ),
       PopupMenuItem<CurrentThemeMode>(
         child: getJournalModelView().currentThemeMode == CurrentThemeMode.dark
             ? Text("Toggle Light Mode")
             : Text("Toggle Dark Mode"),
         value: getJournalModelView().currentThemeMode, // value: ,
       ),
+      PopupMenuItem<MenuAction>(
+        child: Text("Clear All Entries"),
+        value: MenuAction.clear_all_entries,
+      ),
     ];
-  }
-
-  JournalsModelView getJournalModelView() {
-    return getIt.get<JournalsModelView>();
   }
 
   Widget getPage(int index, JournalsModelView modelView) {
@@ -163,7 +145,7 @@ class _HomePageState extends State<HomePage> {
         },
       ),
       // ),
-      buildCalendarSingleChildScrollView(),
+      buildCalendarView(),
     ];
     return pageList[index];
   }
@@ -222,11 +204,15 @@ class _HomePageState extends State<HomePage> {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Icon(FontAwesomeIcons.trash, color: Colors.white),
+              Icon(
+                FontAwesomeIcons.trash,
+                color: Colors.white,
+                size: 15,
+              ),
               SizedBox(width: 10),
               Text(
                 "Delete",
-                style: TextStyle(fontSize: 20, color: Colors.white),
+                style: TextStyle(fontSize: 16, color: Colors.white),
               )
             ],
           ),
@@ -242,10 +228,14 @@ class _HomePageState extends State<HomePage> {
             children: [
               Text(
                 "Delete",
-                style: TextStyle(fontSize: 20, color: Colors.white),
+                style: TextStyle(fontSize: 16, color: Colors.white),
               ),
               SizedBox(width: 10),
-              Icon(FontAwesomeIcons.trash, color: Colors.white),
+              Icon(
+                FontAwesomeIcons.trash,
+                color: Colors.white,
+                size: 15,
+              ),
             ],
           ),
         ),
@@ -300,49 +290,49 @@ class _HomePageState extends State<HomePage> {
         });
   }
 
-  SingleChildScrollView buildCalendarSingleChildScrollView() {
-    return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Center(
-            child: Text(
-              "Today: ${_currentDate.toIso8601String().substring(0, 10)}",
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.w500),
-            ),
+  Widget buildCalendarView() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Center(
+          child: Text(
+            "Today: ${_currentDate.toIso8601String().substring(0, 10)}",
+            style: TextStyle(fontSize: 22, fontWeight: FontWeight.w500),
           ),
-          TableCalendar(
-            rowHeight: 40,
-            calendarController: _calendarController,
-            calendarStyle: CalendarStyle(
-              selectedColor: Theme.of(context).accentColor,
-              weekendStyle: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: Colors.black,
-              ),
-              outsideWeekendStyle:
-                  TextStyle(color: Colors.black.withOpacity(.40)),
-              todayColor: Colors.green,
-              markersColor: Colors.black,
-              contentPadding: EdgeInsets.zero,
+        ),
+        TableCalendar(
+          rowHeight: 40,
+          calendarController: _calendarController,
+          calendarStyle: CalendarStyle(
+            selectedColor: Theme.of(context).accentColor,
+            weekendStyle: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Colors.black,
             ),
-            daysOfWeekStyle: DaysOfWeekStyle(
-              weekendStyle: TextStyle(color: Colors.black),
-            ),
+            outsideWeekendStyle:
+                TextStyle(color: Colors.black.withOpacity(.40)),
+            todayColor: Colors.black,
+            markersColor: Colors.black,
+            contentPadding: EdgeInsets.zero,
           ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 10, 20, 10),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  "Recent Entries",
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w500,
-                  ),
+          daysOfWeekStyle: DaysOfWeekStyle(
+            weekendStyle: TextStyle(color: Colors.black),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 10, 20, 10),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                "Recent Entries",
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w500,
                 ),
-                Text(
+              ),
+              GestureDetector(
+                child: Text(
                   "See All",
                   style: TextStyle(
                       color: Theme.of(context)
@@ -351,140 +341,81 @@ class _HomePageState extends State<HomePage> {
                           .color
                           .withOpacity(.60)),
                 ),
-              ],
-            ),
-          ),
-          Column(
-            children: [
-              createFirstEntry(),
-              SizedBox(height: 10),
-              createSecondEntry(),
-              SizedBox(height: 10),
-              createThirdEntry(),
+                onTap: () {
+                  setState(() {
+                    _currentPage = 0;
+                  });
+                },
+              ),
             ],
           ),
-        ],
-      ),
+        ),
+        buildExpandedWidget()
+      ],
     );
   }
 
-  Container createThirdEntry() {
-    return Container(
-      height: 80,
-      width: double.infinity,
-      child: Padding(
-        padding: const EdgeInsets.only(left: 30),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Text(
-              "10/03/2018",
-              style: TextStyle(
-                fontSize: 18,
-                color: Theme.of(context)
-                    .textTheme
-                    .headline4
-                    .color
-                    .withOpacity(.60),
-              ),
-            ),
-            Text(
-              "I got promoted",
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
-            ),
-          ],
-        ),
-      ),
-      // padding: EdgeInsets.only(left: 20),
-      margin: EdgeInsets.only(left: 20),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(15),
-          bottomLeft: Radius.circular(15),
-        ),
-        color: Theme.of(context).accentColor.withOpacity(.30),
-      ),
-    );
-  }
-
-  Container createSecondEntry() {
-    return Container(
-      height: 80,
-      width: double.infinity,
-      child: Padding(
-        padding: const EdgeInsets.only(left: 30),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Text(
-              "10/03/2018",
-              style: TextStyle(
-                fontSize: 18,
-                color: Theme.of(context)
-                    .textTheme
-                    .headline4
-                    .color
-                    .withOpacity(.60),
-              ),
-            ),
-            Text(
-              "I got promoted",
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
-            ),
-          ],
-        ),
-      ),
-      // padding: EdgeInsets.only(left: 20),
-      margin: EdgeInsets.only(left: 20),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(15),
-          bottomLeft: Radius.circular(15),
-        ),
-        color: Theme.of(context).accentColor.withOpacity(.30),
-      ),
-    );
-  }
-
-  Container createFirstEntry() {
-    return Container(
-      height: 80,
-      width: double.infinity,
-      child: Padding(
-        padding: const EdgeInsets.only(left: 30),
-        child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Text(
-                "13/03/2018",
-                style: TextStyle(
-                  fontSize: 18,
-                  color: Theme.of(context)
-                      .textTheme
-                      .headline4
-                      .color
-                      .withOpacity(.60),
+  Expanded buildExpandedWidget() {
+    return Expanded(
+        child: FutureBuilder(
+          future: getRecentJournalEntry(),
+          builder:
+              (BuildContext context, AsyncSnapshot<List<Journal>> snapshot) {
+            if (!snapshot.hasData)
+              return Center(child: CircularProgressIndicator());
+            else
+              return ListView.separated(
+                itemCount: snapshot.data.length,
+                separatorBuilder: (context, int) => SizedBox(
+                  height: 8,
                 ),
-              ),
-              Text(
-                "Full-day Hike in the Mountain",
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
-              ),
-            ]),
-      ),
-      // padding: EdgeInsets.only(left: 20),
-      margin: EdgeInsets.only(left: 20),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(15),
-          bottomLeft: Radius.circular(15),
+                itemBuilder: (context, index) {
+                  return Padding(
+                    padding: const EdgeInsets.only(left: 24.0),
+                    child: GestureDetector(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.only(
+                              topLeft: Radius.circular(20),
+                              bottomLeft: Radius.circular(10)),
+                          color:
+                              Theme.of(context).accentColor.withOpacity(.3),
+                        ),
+                        padding: EdgeInsets.symmetric(horizontal: 18),
+                        height: 70,
+                        child: Column(
+                          // mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(DateFormat.yMd()
+                                .add_jm()
+                                .format(snapshot.data[index].editDate)),
+                            Text(
+                              snapshot.data[index].title,
+                              style: TextStyle(
+                                  fontSize: 20, fontWeight: FontWeight.w500),
+                            ),
+                          ],
+                        ),
+                      ),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => EditPage(
+                              journal: snapshot.data[index],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  );
+                },
+              );
+          },
         ),
-        color: Theme.of(context).accentColor.withOpacity(.30),
-      ),
-    );
+      );
   }
 
   BottomNavigationBar createButtomNavigationBar() {
