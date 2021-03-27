@@ -15,7 +15,8 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   CalendarController _calendarController;
-  DateTime _currentDate;
+  Map<DateTime, List<Journal>> _calendarEvents;
+
   int _currentPage = 0;
   List<String> _pageTitles = ["Home", "Calendar"];
 
@@ -23,7 +24,7 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     _calendarController = CalendarController();
-    _currentDate = DateTime.now();
+    initializeCalendarEvents();
   }
 
   @override
@@ -296,27 +297,40 @@ class _HomePageState extends State<HomePage> {
       children: [
         Center(
           child: Text(
-            "Today: ${_currentDate.toIso8601String().substring(0, 10)}",
+            "Today: " + DateFormat.yMMMd().format(DateTime.now()),
             style: TextStyle(fontSize: 22, fontWeight: FontWeight.w500),
           ),
         ),
-        TableCalendar(
-          rowHeight: 40,
-          calendarController: _calendarController,
-          calendarStyle: CalendarStyle(
-            selectedColor: Theme.of(context).accentColor,
-            weekendStyle: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: Colors.black,
+        Padding(
+          padding: const EdgeInsets.only(top: 8.0, right: 8),
+          child: Consumer(
+            builder: (_, JournalsModelView model, __) => FutureBuilder<Map<DateTime, List<Journal>>>(
+              future: model.getCalendarEvents(),
+              builder: (context, snapshot) => TableCalendar(
+                rowHeight: 40,
+                events: snapshot.data,
+                onDaySelected: (selectedDate, _, __) {
+                  // print("Selected Date is: ${selectedDate.toString()}");
+                },
+                calendarController: _calendarController,
+                headerVisible: false,
+                calendarStyle: CalendarStyle(
+                  selectedColor: Theme.of(context).accentColor,
+                  weekendStyle: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                  ),
+                  outsideWeekendStyle:
+                      TextStyle(color: Colors.black.withOpacity(.40)),
+                  todayColor: Colors.black,
+                  markersColor: Colors.black,
+                  contentPadding: EdgeInsets.zero,
+                ),
+                daysOfWeekStyle: DaysOfWeekStyle(
+                  weekendStyle: TextStyle(color: Colors.black),
+                ),
+              ),
             ),
-            outsideWeekendStyle:
-                TextStyle(color: Colors.black.withOpacity(.40)),
-            todayColor: Colors.black,
-            markersColor: Colors.black,
-            contentPadding: EdgeInsets.zero,
-          ),
-          daysOfWeekStyle: DaysOfWeekStyle(
-            weekendStyle: TextStyle(color: Colors.black),
           ),
         ),
         Padding(
@@ -344,6 +358,7 @@ class _HomePageState extends State<HomePage> {
                 onTap: () {
                   setState(() {
                     _currentPage = 0;
+                    // getJournalModelView().getCalendarEventsDeprecated();
                   });
                 },
               ),
@@ -357,65 +372,64 @@ class _HomePageState extends State<HomePage> {
 
   Expanded buildExpandedWidget() {
     return Expanded(
-        child: FutureBuilder(
-          future: getRecentJournalEntry(),
-          builder:
-              (BuildContext context, AsyncSnapshot<List<Journal>> snapshot) {
-            if (!snapshot.hasData)
-              return Center(child: CircularProgressIndicator());
-            else
-              return ListView.separated(
-                itemCount: snapshot.data.length,
-                separatorBuilder: (context, int) => SizedBox(
-                  height: 8,
-                ),
-                itemBuilder: (context, index) {
-                  return Padding(
-                    padding: const EdgeInsets.only(left: 24.0),
-                    child: GestureDetector(
-                      child: Container(
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.only(
-                              topLeft: Radius.circular(20),
-                              bottomLeft: Radius.circular(10)),
-                          color:
-                              Theme.of(context).accentColor.withOpacity(.3),
-                        ),
-                        padding: EdgeInsets.symmetric(horizontal: 18),
-                        height: 70,
-                        child: Column(
-                          // mainAxisAlignment: MainAxisAlignment.spaceAround,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(DateFormat.yMd()
-                                .add_jm()
-                                .format(snapshot.data[index].editDate)),
-                            Text(
-                              snapshot.data[index].title,
-                              style: TextStyle(
-                                  fontSize: 20, fontWeight: FontWeight.w500),
-                            ),
-                          ],
-                        ),
+      child: FutureBuilder(
+        future: getJournalModelView().getRecentJournalEntry(),
+        builder: (BuildContext context, AsyncSnapshot<List<Journal>> snapshot) {
+          if (!snapshot.hasData)
+            // return Center(child: CircularProgressIndicator());
+            return Center(child: Text("No Recent Entry"));
+          else
+            return ListView.separated(
+              itemCount: snapshot.data.length,
+              separatorBuilder: (context, int) => SizedBox(
+                height: 8,
+              ),
+              itemBuilder: (context, index) {
+                return Padding(
+                  padding: const EdgeInsets.only(left: 24.0),
+                  child: GestureDetector(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.only(
+                            topLeft: Radius.circular(20),
+                            bottomLeft: Radius.circular(10)),
+                        color: Theme.of(context).accentColor.withOpacity(.3),
                       ),
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => EditPage(
-                              journal: snapshot.data[index],
-                            ),
+                      padding: EdgeInsets.symmetric(horizontal: 18),
+                      height: 70,
+                      child: Column(
+                        // mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(DateFormat.yMMMEd()
+                              .add_jm()
+                              .format(snapshot.data[index].editDate)),
+                          Text(
+                            snapshot.data[index].title,
+                            style: TextStyle(
+                                fontSize: 20, fontWeight: FontWeight.w700),
                           ),
-                        );
-                      },
+                        ],
+                      ),
                     ),
-                  );
-                },
-              );
-          },
-        ),
-      );
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => EditPage(
+                            journal: snapshot.data[index],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                );
+              },
+            );
+        },
+      ),
+    );
   }
 
   BottomNavigationBar createButtomNavigationBar() {
@@ -432,7 +446,7 @@ class _HomePageState extends State<HomePage> {
               FontAwesomeIcons.home,
               size: 25,
             ),
-            label: "Home"),
+            label: "  Home"),
         BottomNavigationBarItem(
             icon: Icon(
               FontAwesomeIcons.calendar,
@@ -441,5 +455,9 @@ class _HomePageState extends State<HomePage> {
             label: "Calendar"),
       ],
     );
+  }
+
+  void initializeCalendarEvents() async {
+    _calendarEvents = await getJournalModelView().getCalendarEvents();
   }
 }

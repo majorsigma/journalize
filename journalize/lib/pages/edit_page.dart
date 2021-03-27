@@ -84,7 +84,7 @@ class _EditPageState extends State<EditPage> {
               Expanded(
                 child: TextField(
                   controller: _contentEditingController,
-                  textCapitalization: TextCapitalization.words,
+                  textCapitalization: TextCapitalization.sentences,
                   keyboardType: TextInputType.multiline,
                   style: TextStyle(fontSize: 18),
                   autocorrect: true,
@@ -141,7 +141,7 @@ class _EditPageState extends State<EditPage> {
                           getIt.get<JournalsModelView>().updateJournal(
                                 journal: widget.journal,
                                 index: widget.index,
-                                title: title,
+                                title: title.trim(),
                                 content: content,
                                 editDate: DateTime.now(),
                               );

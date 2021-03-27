@@ -9,6 +9,7 @@ import 'package:journalize/services/service_locator.dart';
 class JournalsModelView extends ChangeNotifier {
   DatabaseService dbService;
   CurrentThemeMode currentThemeMode = CurrentThemeMode.light;
+  Map<DateTime, List<Journal>> calendarEvents = {};
 
   JournalsModelView({this.dbService});
 
@@ -24,6 +25,7 @@ class JournalsModelView extends ChangeNotifier {
     JournalList database = await readJournalListFromFile();
     database.journalList.sort(
         (journalA, journalB) => journalB.editDate.compareTo(journalA.editDate));
+
     return database.journalList;
   }
 
@@ -36,7 +38,7 @@ class JournalsModelView extends ChangeNotifier {
 
   void removeJournal(Journal journal) async {
     JournalList journalList = await readJournalListFromFile();
-    journalList.journalList.remove(journal); 
+    journalList.journalList.remove(journal);
     dbService.resetFileToDefault();
     dbService.writeToFile(jsonEncode(journalList.toJson()));
     notifyListeners();
@@ -49,7 +51,7 @@ class JournalsModelView extends ChangeNotifier {
       String content,
       DateTime editDate}) async {
     JournalList database = await readJournalListFromFile();
-    database.journalList.removeAt(index);
+    database.journalList.remove(journal);
     Journal newJournal =
         Journal(title: title, content: content, editDate: editDate);
     database.journalList.add(newJournal);
@@ -64,8 +66,6 @@ class JournalsModelView extends ChangeNotifier {
     notifyListeners();
   }
 
-   
-
   void toggleThemeMode() {
     if (currentThemeMode == CurrentThemeMode.light) {
       currentThemeMode = CurrentThemeMode.dark;
@@ -75,26 +75,83 @@ class JournalsModelView extends ChangeNotifier {
       notifyListeners();
     }
   }
-}
-
-JournalsModelView getJournalModelView() {
-    return getIt.get<JournalsModelView>();
-  }
 
   Future<List<Journal>> getRecentJournalEntry() async {
     List<Journal> sortedJournalEntries =
         await getJournalModelView().getSortedJournalEntries();
     var recent = sortedJournalEntries.where((journal) {
       DateTime todaysDate = DateTime.now();
-      DateTime removed2days = todaysDate.subtract(Duration(hours: 72));
+      DateTime removed2days = todaysDate.subtract(Duration(hours: 48));
 
-      if (journal.editDate.compareTo(removed2days) < 0)
+      if (journal.editDate.compareTo(removed2days) < 0) {
         return false;
-      else
+      } else {
         return true;
+      }
     });
+    
     return recent.toList();
   }
+
+  Future<Map<DateTime, List<Journal>>> getCalendarEvents() async {
+    Map<DateTime, List<Journal>> events = {};
+
+    MapEntry<DateTime, List<Journal>> mapEntry = null;
+    List<MapEntry<DateTime, List<Journal>>> mapEntryList = [];
+    List<Journal> allJournalEntries =
+        await getJournalModelView().getSortedJournalEntries();
+    List<DateTime> listOfEventDate = await getListOfEventDates();
+
+    listOfEventDate.forEach((eventDate) {
+      mapEntry = MapEntry(
+          eventDate,
+          allJournalEntries.where((journal) {
+            bool status;
+            if (journal.editDate.year == eventDate.year &&
+                journal.editDate.month == eventDate.month &&
+                journal.editDate.day == eventDate.day) {
+              status = true;
+            } else
+              status = false;
+
+            return status;
+          }).toList());
+      mapEntryList.add(mapEntry);
+      events.addEntries(mapEntryList);
+      notifyListeners();
+    });
+
+    return events;
+  }
+
+  Future<List<DateTime>> getListOfEventDates() async {
+    List<DateTime> listOfEventDate = [];
+    List<Journal> allJournalEntries =
+        await getJournalModelView().getSortedJournalEntries();
+
+    DateTime eventDate;
+    int day;
+    int month;
+    int year;
+    for (int i = 0; i < allJournalEntries.length; i++) {
+      day = allJournalEntries[i].editDate.day;
+      month = allJournalEntries[i].editDate.month;
+      year = allJournalEntries[i].editDate.year;
+      eventDate = DateTime(year, month, day);
+
+      if (!listOfEventDate.contains(eventDate)) {
+        listOfEventDate.add(eventDate);
+      }
+    }
+
+    return listOfEventDate;
+  }
+}
+
+// This function returns a singleton of JournalsModelView
+JournalsModelView getJournalModelView() {
+  return getIt.get<JournalsModelView>();
+}
 
 enum CurrentThemeMode { light, dark }
 

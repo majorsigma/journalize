@@ -76,7 +76,7 @@ class _AddPageState extends State<AddPage> {
               Expanded(
                 child: TextField(
                   controller: _contentEditingController,
-                  textCapitalization: TextCapitalization.words,
+                  textCapitalization: TextCapitalization.sentences    ,
                   keyboardType: TextInputType.multiline,
                   style: TextStyle(fontSize: 18),
                   autocorrect: true,
@@ -133,7 +133,7 @@ class _AddPageState extends State<AddPage> {
                         } else {
                           Journal journal = Journal(
                               title: title,
-                              content: content,
+                              content: content.trim(),
                               editDate: DateTime.now());
 
                           getIt.get<JournalsModelView>().addJournal(journal);
