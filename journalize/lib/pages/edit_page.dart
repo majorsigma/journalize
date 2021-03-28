@@ -147,7 +147,6 @@ class _EditPageState extends State<EditPage> {
                               );
                           _clearTextFields();
                           Navigator.of(context).pop();
-                          // print("New Title: $title\nContent: $content");
                         }
                       },
                       color: Theme.of(context).accentColor,

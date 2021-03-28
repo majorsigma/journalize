@@ -4,6 +4,10 @@ import 'package:journalize/modelviews/journals_modelview.dart';
 import 'package:journalize/services/service_locator.dart';
 
 class AddPage extends StatefulWidget {
+  DateTime dateOfEntry;
+
+  AddPage({this.dateOfEntry});
+
   @override
   _AddPageState createState() => _AddPageState();
 }
@@ -76,7 +80,7 @@ class _AddPageState extends State<AddPage> {
               Expanded(
                 child: TextField(
                   controller: _contentEditingController,
-                  textCapitalization: TextCapitalization.sentences    ,
+                  textCapitalization: TextCapitalization.sentences,
                   keyboardType: TextInputType.multiline,
                   style: TextStyle(fontSize: 18),
                   autocorrect: true,
@@ -134,7 +138,7 @@ class _AddPageState extends State<AddPage> {
                           Journal journal = Journal(
                               title: title,
                               content: content.trim(),
-                              editDate: DateTime.now());
+                              editDate: widget.dateOfEntry == null ? DateTime.now() : widget.dateOfEntry);
 
                           getIt.get<JournalsModelView>().addJournal(journal);
 
@@ -149,14 +153,7 @@ class _AddPageState extends State<AddPage> {
                                 "Your content has been saved successfully"),
                           ));
                           Navigator.of(context).pop();
-
-                          // var data = getIt
-                          //     .get<JournalsModelView>()
-                          //     .readJournalListFromFile();
-                          // data.then((value) => print(value.toJson()));
                         }
-
-                        // Remove journals here
                       },
                       color: Theme.of(context).accentColor,
                       child: Padding(

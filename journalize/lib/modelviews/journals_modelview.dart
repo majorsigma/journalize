@@ -89,7 +89,7 @@ class JournalsModelView extends ChangeNotifier {
         return true;
       }
     });
-    
+
     return recent.toList();
   }
 
@@ -145,6 +145,43 @@ class JournalsModelView extends ChangeNotifier {
     }
 
     return listOfEventDate;
+  }
+
+  Future<bool> isThereAnEntryOn(DateTime selectedDate) async {
+    List<Journal> listOfJournal = await getSortedJournalEntries();
+    bool status = false;
+    listOfJournal.forEach((journal) {
+      if (journal.editDate.year == selectedDate.year &&
+          journal.editDate.month == selectedDate.month &&
+          journal.editDate.day == selectedDate.day) {
+        status = true;
+        return status;
+      }
+    });
+    return status;
+  }
+
+  Future<List<Journal>> getEntriesOn(DateTime selectedDate) async {
+    List<Journal> listOfJournals =
+        await getJournalModelView().getSortedJournalEntries();
+    bool isThere = await getJournalModelView().isThereAnEntryOn(selectedDate);
+    List<Journal> listForTheDay = [];
+    if (isThere) {
+      listForTheDay = listOfJournals.where((journal) {
+        bool status = false;
+        if (journal.editDate.year == selectedDate.year &&
+            journal.editDate.month == selectedDate.month &&
+            journal.editDate.day == selectedDate.day) {
+          status = true;
+          notifyListeners();
+        } else {
+          status = false;
+          notifyListeners();
+        }
+        return status;
+      }).toList();
+    }
+    return listForTheDay;
   }
 }
 

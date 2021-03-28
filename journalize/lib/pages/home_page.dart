@@ -15,7 +15,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   CalendarController _calendarController;
-  Map<DateTime, List<Journal>> _calendarEvents;
+  DateTime _selectedDate;
 
   int _currentPage = 0;
   List<String> _pageTitles = ["Home", "Calendar"];
@@ -24,7 +24,6 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     _calendarController = CalendarController();
-    initializeCalendarEvents();
   }
 
   @override
@@ -117,10 +116,8 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget getPage(int index, JournalsModelView modelView) {
-    // Future<JournalList> journals = modelView.readJournalListFromFile();
     Future<List<Journal>> journals = modelView.getSortedJournalEntries();
     List<Widget> pageList = [
-      // SingleChildScrollView(
       FutureBuilder(
         future: journals,
         builder: (context, AsyncSnapshot<List<Journal>> snapshot) {
@@ -132,11 +129,9 @@ class _HomePageState extends State<HomePage> {
             );
           } else
             return ListView.separated(
-              // reverse: true,
               shrinkWrap: true,
               itemCount: snapshot.data.length,
               separatorBuilder: (context, index) => Divider(
-                // thickness: 2,
                 color: Theme.of(context).accentColor.withOpacity(.6),
               ),
               itemBuilder: (context, index) {
@@ -145,7 +140,6 @@ class _HomePageState extends State<HomePage> {
             );
         },
       ),
-      // ),
       buildCalendarView(),
     ];
     return pageList[index];
@@ -304,13 +298,78 @@ class _HomePageState extends State<HomePage> {
         Padding(
           padding: const EdgeInsets.only(top: 8.0, right: 8),
           child: Consumer(
-            builder: (_, JournalsModelView model, __) => FutureBuilder<Map<DateTime, List<Journal>>>(
+            builder: (_, JournalsModelView model, __) =>
+                FutureBuilder<Map<DateTime, List<Journal>>>(
               future: model.getCalendarEvents(),
               builder: (context, snapshot) => TableCalendar(
                 rowHeight: 40,
                 events: snapshot.data,
-                onDaySelected: (selectedDate, _, __) {
-                  // print("Selected Date is: ${selectedDate.toString()}");
+                onDaySelected: (selectedDate, _, __) async {
+                  _selectedDate = selectedDate;
+                  if (await getJournalModelView()
+                      .isThereAnEntryOn(selectedDate)) {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) {
+                          return Scaffold(
+                            appBar: AppBar(
+                              title: Center(
+                                child: Text(
+                                    "Entries for ${DateFormat.yMMMd().format(selectedDate)}"),
+                              ),
+                              automaticallyImplyLeading: false,
+                            ),
+                            body: Padding(
+                              padding: const EdgeInsets.only(top: 8.0),
+                              child: FutureBuilder<List<Journal>>(
+                                future: model.getEntriesOn(selectedDate),
+                                builder: (context,
+                                    AsyncSnapshot<List<Journal>> snapshot) {
+                                  if (!snapshot.hasData &&
+                                      snapshot.connectionState ==
+                                          ConnectionState.waiting) {
+                                    return Center(
+                                        child: CircularProgressIndicator());
+                                  } else
+                                    return ListView.separated(
+                                      itemCount: snapshot.data.length,
+                                      itemBuilder: (context, index) =>
+                                          createDismissbleJournalItem(
+                                              snapshot, index, context),
+                                      separatorBuilder: (context, index) =>
+                                          Divider(
+                                              color:
+                                                  Theme.of(context).accentColor),
+                                    );
+                                },
+                              ),
+                            ),
+                            floatingActionButton: FloatingActionButton(
+                                child: Icon(FontAwesomeIcons.pen, color: Colors.white,),
+                                onPressed: () {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          AddPage(dateOfEntry: _selectedDate),
+                                    ),
+                                  );
+                                },
+                                tooltip: "Add an entry on this date",
+                                ),
+                          );
+                        },
+                      ),
+                    );
+                  } else {
+                    print("No entry for the selected day");
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => AddPage(
+                          dateOfEntry: selectedDate,
+                        ),
+                      ),
+                    );
+                  }
                 },
                 calendarController: _calendarController,
                 headerVisible: false,
@@ -318,7 +377,7 @@ class _HomePageState extends State<HomePage> {
                   selectedColor: Theme.of(context).accentColor,
                   weekendStyle: TextStyle(
                     fontWeight: FontWeight.bold,
-                    color: Colors.black,
+                    color: Theme.of(context).accentColor,
                   ),
                   outsideWeekendStyle:
                       TextStyle(color: Colors.black.withOpacity(.40)),
@@ -327,7 +386,7 @@ class _HomePageState extends State<HomePage> {
                   contentPadding: EdgeInsets.zero,
                 ),
                 daysOfWeekStyle: DaysOfWeekStyle(
-                  weekendStyle: TextStyle(color: Colors.black),
+                  weekendStyle: TextStyle(color: Theme.of(context).accentColor),
                 ),
               ),
             ),
@@ -455,9 +514,5 @@ class _HomePageState extends State<HomePage> {
             label: "Calendar"),
       ],
     );
-  }
-
-  void initializeCalendarEvents() async {
-    _calendarEvents = await getJournalModelView().getCalendarEvents();
   }
 }
