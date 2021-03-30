@@ -65,6 +65,7 @@ class _HomePageState extends State<HomePage> {
       bottomNavigationBar: createButtomNavigationBar(),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       floatingActionButton: FloatingActionButton(
+        key: Key("fab"),
         child: Icon(
           FontAwesomeIcons.edit,
           color: Colors.white,
@@ -129,6 +130,7 @@ class _HomePageState extends State<HomePage> {
             );
           } else
             return ListView.separated(
+              physics: ClampingScrollPhysics(),
               shrinkWrap: true,
               itemCount: snapshot.data.length,
               separatorBuilder: (context, index) => Divider(
@@ -338,24 +340,27 @@ class _HomePageState extends State<HomePage> {
                                               snapshot, index, context),
                                       separatorBuilder: (context, index) =>
                                           Divider(
-                                              color:
-                                                  Theme.of(context).accentColor),
+                                              color: Theme.of(context)
+                                                  .accentColor),
                                     );
                                 },
                               ),
                             ),
                             floatingActionButton: FloatingActionButton(
-                                child: Icon(FontAwesomeIcons.pen, color: Colors.white,),
-                                onPressed: () {
-                                  Navigator.of(context).push(
-                                    MaterialPageRoute(
-                                      builder: (context) =>
-                                          AddPage(dateOfEntry: _selectedDate),
-                                    ),
-                                  );
-                                },
-                                tooltip: "Add an entry on this date",
-                                ),
+                              child: Icon(
+                                FontAwesomeIcons.pen,
+                                color: Colors.white,
+                              ),
+                              onPressed: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        AddPage(dateOfEntry: _selectedDate),
+                                  ),
+                                );
+                              },
+                              tooltip: "Add an entry on this date",
+                            ),
                           );
                         },
                       ),
@@ -382,7 +387,10 @@ class _HomePageState extends State<HomePage> {
                   outsideWeekendStyle:
                       TextStyle(color: Colors.black.withOpacity(.40)),
                   todayColor: Colors.black,
-                  markersColor: Colors.black,
+                  markersColor:
+                      getJournalModelView().currentThemeMode == CurrentThemeMode.light
+                          ? Colors.black
+                          : Colors.white,
                   contentPadding: EdgeInsets.zero,
                 ),
                 daysOfWeekStyle: DaysOfWeekStyle(

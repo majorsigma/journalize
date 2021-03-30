@@ -9,6 +9,7 @@ import 'package:journalize/services/service_locator.dart';
 class JournalsModelView extends ChangeNotifier {
   DatabaseService dbService;
   CurrentThemeMode currentThemeMode = CurrentThemeMode.light;
+
   Map<DateTime, List<Journal>> calendarEvents = {};
 
   JournalsModelView({this.dbService});
@@ -183,6 +184,16 @@ class JournalsModelView extends ChangeNotifier {
     }
     return listForTheDay;
   }
+
+
+ThemeMode getSelectedTheme() {
+  if (currentThemeMode == CurrentThemeMode.light) {
+    return ThemeMode.light;
+  } else {
+    return ThemeMode.dark;
+  }
+}
+
 }
 
 // This function returns a singleton of JournalsModelView

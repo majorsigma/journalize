@@ -19,6 +19,12 @@ class _MyAppState extends State<MyApp> {
   JournalsModelView _journalsModelView = getIt.get<JournalsModelView>();
 
   @override
+  void initState() {
+    super.initState();
+    // setupGetIt();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
@@ -28,7 +34,7 @@ class _MyAppState extends State<MyApp> {
       ],
       child: Consumer<JournalsModelView>(
         builder: (_, modelView, __) => MaterialApp(
-          themeMode: getSelectedTheme(),
+          themeMode: _getJournalsModelView().getSelectedTheme(),
           debugShowCheckedModeBanner: false,
           theme: getIt.get<JournalTheme>().lightTheme,
           darkTheme: getIt.get<JournalTheme>().darkTheme,
@@ -38,18 +44,10 @@ class _MyAppState extends State<MyApp> {
       ),
     );
   }
+}
 
-  ThemeMode getSelectedTheme() {
-    var currentThemeMode = _getJournalsModelView().currentThemeMode;
 
-    if (currentThemeMode == CurrentThemeMode.dark) {
-      return ThemeMode.dark;
-    } else {
-      return ThemeMode.light;
-    }
-  }
 
-  JournalsModelView _getJournalsModelView() {
-    return getIt.get<JournalsModelView>();
-  }
+JournalsModelView _getJournalsModelView() {
+  return getIt.get<JournalsModelView>();
 }
