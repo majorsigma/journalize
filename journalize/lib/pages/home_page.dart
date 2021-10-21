@@ -334,6 +334,7 @@ class _HomePageState extends State<HomePage> {
                                         child: CircularProgressIndicator());
                                   } else
                                     return ListView.separated(
+                                      physics: ClampingScrollPhysics(),
                                       itemCount: snapshot.data.length,
                                       itemBuilder: (context, index) =>
                                           createDismissbleJournalItem(

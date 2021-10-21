@@ -3,9 +3,9 @@ import 'package:journalize/models/journal.dart';
 import 'package:journalize/modelviews/journals_modelview.dart';
 import 'package:journalize/services/service_locator.dart';
 
+// ignore: must_be_immutable
 class AddPage extends StatefulWidget {
   DateTime dateOfEntry;
-
   AddPage({this.dateOfEntry});
 
   @override
@@ -138,7 +138,9 @@ class _AddPageState extends State<AddPage> {
                           Journal journal = Journal(
                               title: title,
                               content: content.trim(),
-                              editDate: widget.dateOfEntry == null ? DateTime.now() : widget.dateOfEntry);
+                              editDate: widget.dateOfEntry == null
+                                  ? DateTime.now()
+                                  : widget.dateOfEntry);
 
                           getIt.get<JournalsModelView>().addJournal(journal);
 

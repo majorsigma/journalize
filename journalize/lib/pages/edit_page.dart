@@ -8,7 +8,6 @@ class EditPage extends StatefulWidget {
   final int index;
 
   EditPage({this.journal, this.index});
-
   @override
   _EditPageState createState() => _EditPageState();
 }
